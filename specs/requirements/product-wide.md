@@ -19,7 +19,6 @@ Rules that apply to more than one feature.
 - A booking whose start is in the past cannot be made; the app does not offer past times.
 - A Member may hold at most two bookings starting in the future; a third is refused until one is cancelled or has passed.
 - Bookings are for a single day: start and end are on the same date.
-- A new booking appears in the Member's list immediately, without a page reload.
 - Room capacity is a whole number of people; room names are unique across the office.
 - Cancelling a booking removes it; there is no cancellation history or audit trail.
 
