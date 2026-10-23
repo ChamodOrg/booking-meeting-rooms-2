@@ -16,8 +16,12 @@ service http:InterceptableService / on ep0 {
     # http:Unauthorized (Not signed in, or the token lacks the permission)
     # http:NotFound (No such room, or no such booking of the caller's)
     # http:Conflict (Refused: the booking has already started and cannot be cancelled)
-    resource function delete me/bookings/[string bookingId]() returns http:NoContent|ErrorUnauthorized|ErrorNotFound|ErrorConflict|http:NotImplemented {
-        return http:NOT_IMPLEMENTED;
+    resource function delete me/bookings/[string bookingId](http:RequestContext ctx) returns http:NoContent|ErrorUnauthorized|ErrorNotFound|ErrorConflict|http:Unauthorized|http:InternalServerError {
+        GatewayCaller|http:Unauthorized caller = requireGatewayCaller(ctx);
+        if caller is http:Unauthorized {
+            return caller;
+        }
+        return cancelBookingHandler(caller.userId, bookingId);
     }
 
     # The caller's bookings: upcoming first, soonest at the top, then past ones, most recent first
@@ -27,8 +31,12 @@ service http:InterceptableService / on ep0 {
     # + return - returns can be any of following types 
     # http:Ok (The caller's bookings, each with its room's name)
     # http:Unauthorized (Not signed in, or the token lacks the permission)
-    resource function get me/bookings(int 'limit = 20, int offset = 0) returns inline_response_200_2|ErrorUnauthorized|http:NotImplemented {
-        return http:NOT_IMPLEMENTED;
+    resource function get me/bookings(http:RequestContext ctx, int 'limit = 20, int offset = 0) returns inline_response_200_2|ErrorBadRequest|ErrorUnauthorized|http:Unauthorized|http:InternalServerError {
+        GatewayCaller|http:Unauthorized caller = requireGatewayCaller(ctx);
+        if caller is http:Unauthorized {
+            return caller;
+        }
+        return listBookingsHandler(caller.userId, 'limit, offset);
     }
 
     # Every room, alphabetical; with date, startTime and endTime only rooms free for that whole range; minCapacity keeps rooms that hold at least that many
@@ -70,7 +78,7 @@ service http:InterceptableService / on ep0 {
     # http:Unauthorized (Not signed in, or the token lacks the permission)
     # http:NotFound (No such room, or no such booking of the caller's)
     # http:Conflict (Refused: the room is already booked in that range, or the caller already holds two upcoming bookings; the message says which. Nothing is reserved)
-    resource function post me/bookings(http:RequestContext ctx, @http:Payload BookingRequest payload) returns Booking|ErrorBadRequest|ErrorUnauthorized|ErrorNotFound|ErrorConflict|http:Unauthorized|http:InternalServerError|http:NotImplemented {
+    resource function post me/bookings(http:RequestContext ctx, @http:Payload BookingRequest payload) returns Booking|ErrorBadRequest|ErrorUnauthorized|ErrorNotFound|ErrorConflict|http:Unauthorized|http:InternalServerError {
         GatewayCaller|http:Unauthorized caller = requireGatewayCaller(ctx);
         if caller is http:Unauthorized {
             return caller;

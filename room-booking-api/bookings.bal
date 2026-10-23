@@ -133,3 +133,106 @@ function runBookingTransaction(string memberId, BookingRequest request, time:Dat
     }
     return outcome;
 }
+
+type BookingRow record {|
+    string id;
+    string roomId;
+    string roomName;
+    string dateText;
+    string startText;
+    string endText;
+    int attendees;
+    boolean upcoming;
+|};
+
+function notFoundBooking() returns ErrorNotFound {
+    return {body: {code: 404, message: "Not found", description: "No such booking"}};
+}
+
+// A booking is upcoming while its start is not before the office-local now: the same
+// cut-off createMyBooking uses for the two-booking limit.
+function listMyBookings(string memberId, int 'limit, int offset) returns [BookingRow[], int]|error {
+    [time:Date, int] [today, nowMinute] = officeNow();
+    string todayText = formatDate(today);
+    string nowText = formatMinutes(nowMinute);
+    CountRow total = check bookingDb->queryRow(`
+        SELECT COUNT(*) AS total FROM bookings WHERE member_id = ${memberId}`);
+    stream<BookingRow, sql:Error?> rows = bookingDb->query(`
+        SELECT * FROM (
+            SELECT b.id AS id, b.room_id AS "roomId", r.name AS "roomName",
+                   to_char(b.booking_date, 'YYYY-MM-DD') AS "dateText",
+                   to_char(b.start_time, 'HH24:MI') AS "startText",
+                   to_char(b.end_time, 'HH24:MI') AS "endText",
+                   b.attendees AS attendees,
+                   (b.booking_date > ${todayText}::date
+                    OR (b.booking_date = ${todayText}::date AND b.start_time >= ${nowText}::time)) AS upcoming,
+                   (b.booking_date + b.start_time) AS starts_at
+            FROM bookings b JOIN rooms r ON r.id = b.room_id
+            WHERE b.member_id = ${memberId}) AS mine
+        ORDER BY upcoming DESC,
+                 CASE WHEN upcoming THEN starts_at END ASC,
+                 starts_at DESC, id ASC
+        LIMIT ${'limit} OFFSET ${offset}`);
+    BookingRow[] page = check from BookingRow row in rows select row;
+    return [page, total.total];
+}
+
+function listBookingsHandler(string memberId, int 'limit, int offset)
+        returns inline_response_200_2|ErrorBadRequest|http:InternalServerError {
+    ErrorBadRequest? invalid = paging('limit, offset);
+    if invalid is ErrorBadRequest {
+        return invalid;
+    }
+    [BookingRow[], int]|error result = trap listMyBookings(memberId, 'limit, offset);
+    if result is error {
+        log:printError("listMyBookings failed", 'error = result);
+        return http:INTERNAL_SERVER_ERROR;
+    }
+    var [rows, count] = result;
+    Booking[] data = from BookingRow row in rows
+        select {
+            id: row.id,
+            roomId: row.roomId,
+            roomName: row.roomName,
+            date: row.dateText,
+            startTime: row.startText,
+            endTime: row.endText,
+            attendees: row.attendees,
+            status: row.upcoming ? "upcoming" : "past"
+        };
+    [string?, string?] [next, previous] = pageLinks("/me/bookings", "", offset, 'limit, count);
+    return {count, next, previous, data};
+}
+
+// One statement deletes only an upcoming booking of this member, so a start that
+// passes between check and delete cannot slip through. A miss is then told apart:
+// the member's own started booking is 409; anything else is 404.
+function cancelMyBooking(string memberId, string bookingId) returns http:NoContent|ErrorNotFound|ErrorConflict|error {
+    [time:Date, int] [today, nowMinute] = officeNow();
+    string todayText = formatDate(today);
+    string nowText = formatMinutes(nowMinute);
+    sql:ExecutionResult result = check bookingDb->execute(`
+        DELETE FROM bookings
+        WHERE id = ${bookingId} AND member_id = ${memberId}
+          AND (booking_date > ${todayText}::date
+               OR (booking_date = ${todayText}::date AND start_time >= ${nowText}::time))`);
+    if result.affectedRowCount == 1 {
+        return http:NO_CONTENT;
+    }
+    CountRow owned = check bookingDb->queryRow(`
+        SELECT COUNT(*) AS total FROM bookings WHERE id = ${bookingId} AND member_id = ${memberId}`);
+    if owned.total > 0 {
+        return conflictError("This booking has already started and cannot be cancelled");
+    }
+    return notFoundBooking();
+}
+
+function cancelBookingHandler(string memberId, string bookingId)
+        returns http:NoContent|ErrorNotFound|ErrorConflict|http:InternalServerError {
+    http:NoContent|ErrorNotFound|ErrorConflict|error result = trap cancelMyBooking(memberId, bookingId);
+    if result is error {
+        log:printError("cancelMyBooking failed", 'error = result);
+        return http:INTERNAL_SERVER_ERROR;
+    }
+    return result;
+}

@@ -145,6 +145,38 @@ export const handlers: RequestHandler[] = [
     );
   }),
 
+  // listMyBookings: the caller's own rows, upcoming (soonest first) then started (latest first)
+  http.get("/api/me/bookings", ({ request }) => {
+    const url = new URL(request.url);
+    const key = (b: SeedBooking): string => `${b.date} ${b.startTime}`;
+    const mine = bookings.filter((b) => b.memberId === ME);
+    const upcoming = mine.filter((b) => !isPast(b.date, b.startTime)).sort((a, b) => key(a).localeCompare(key(b)));
+    const started = mine.filter((b) => isPast(b.date, b.startTime)).sort((a, b) => key(b).localeCompare(key(a)));
+    const view = [...upcoming, ...started].map((b) => ({
+      id: b.id,
+      roomId: b.roomId,
+      roomName: rooms.find((r) => r.id === b.roomId)?.name ?? b.roomId,
+      date: b.date,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      attendees: b.attendees,
+      status: isPast(b.date, b.startTime) ? "past" : "upcoming",
+    }));
+    return HttpResponse.json(page(url, view));
+  }),
+
+  // cancelMyBooking: another member's (or unknown) booking is 404, a started one is 409
+  http.delete("/api/me/bookings/:bookingId", ({ params }) => {
+    const index = bookings.findIndex((b) => b.id === params.bookingId && b.memberId === ME);
+    if (index < 0) return error(404, "Not found", "No such booking of yours.");
+    const b = bookings[index];
+    if (isPast(b.date, b.startTime)) {
+      return error(409, "Conflict", "This booking has already started and cannot be cancelled.");
+    }
+    bookings.splice(index, 1);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   // getRoom
   http.get("/api/rooms/:roomId", ({ params }) => {
     const room = rooms.find((r) => r.id === params.roomId);
