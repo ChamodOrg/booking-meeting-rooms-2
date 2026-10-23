@@ -18,7 +18,7 @@ Needs: F2.
 - Cancelling removes the booking; there is no cancellation history. \[room-booking-prd.md · Product Decisions\]
 - Cancelling frees the room for that time range immediately, and a cancelled future booking no longer counts toward the two-booking limit. \[room-booking-prd.md · Product Decisions\]
 - My list shows upcoming bookings first, soonest at the top.
-- Bookings that have already started stay in the list after the upcoming ones, and cannot be cancelled. *assumed*
+- Bookings that have already started stay in the list after the upcoming ones, and cannot be cancelled.
 
 ## Out of Scope
 
