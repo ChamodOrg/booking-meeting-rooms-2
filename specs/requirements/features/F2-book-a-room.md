@@ -18,10 +18,11 @@ Needs: F1.
 
 - A booking's start and end are on the same date, and the end is after the start. \[room-booking-prd.md · Product Decisions\] 
 - Clash, capacity, past-start and two-booking limit rules are those in Product-wide. \[room-booking-prd.md · Product Decisions\]
-- A booking is made in one step from a chosen room; there is no pending or confirmation state. *assumed*
-- Attendee count is a whole number of at least 1. *assumed*
+- A booking is made in one step from a chosen room; there is no pending or confirmation state.
+- Attendee count is a whole number of at least 1.
 
 ## Out of Scope
 
 - Editing a booking in place; a change is a cancellation and a new booking. \[room-booking-prd.md · Out of Scope\]
 - Recurring bookings, invitations and calendar integration. \[room-booking-prd.md · Out of Scope\]
+
