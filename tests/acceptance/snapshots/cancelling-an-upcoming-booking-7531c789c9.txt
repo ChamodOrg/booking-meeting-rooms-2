@@ -1,0 +1,2 @@
+- alert: Bookings unavailable / Your bookings could not be loaded.
+- no button named Cancel on the page

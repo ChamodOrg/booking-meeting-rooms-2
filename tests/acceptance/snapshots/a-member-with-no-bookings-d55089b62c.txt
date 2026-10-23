@@ -1,0 +1,2 @@
+- alert: Bookings unavailable / Your bookings could not be loaded. Try again in a moment.
+- rowgroup with no data rows
