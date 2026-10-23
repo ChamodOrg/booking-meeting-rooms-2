@@ -35,3 +35,4 @@ See [Product-wide](product-wide.md).
 - Time zones and daylight-saving handling.
 - Editing a booking in place; a change is a cancellation and a new booking.
 - Reporting on room utilisation.
+
