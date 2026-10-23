@@ -44,8 +44,8 @@ service http:InterceptableService / on ep0 {
     # http:Ok (The matching rooms)
     # http:BadRequest (Invalid input: past start, end not after start, different days, attendees below 1 or above the room's capacity; the message says which)
     # http:Unauthorized (Not signed in, or the token lacks the permission)
-    resource function get rooms(string? date, string? startTime, string? endTime, int? minCapacity, int 'limit = 20, int offset = 0) returns inline_response_200|ErrorBadRequest|ErrorUnauthorized|http:NotImplemented {
-        return http:NOT_IMPLEMENTED;
+    resource function get rooms(string? date, string? startTime, string? endTime, int? minCapacity, int 'limit = 20, int offset = 0) returns inline_response_200|ErrorBadRequest|ErrorUnauthorized|http:InternalServerError {
+        return listRoomsHandler(date, startTime, endTime, minCapacity, 'limit, offset);
     }
 
     # One room
@@ -55,12 +55,12 @@ service http:InterceptableService / on ep0 {
     # http:Ok (The room)
     # http:Unauthorized (Not signed in, or the token lacks the permission)
     # http:NotFound (No such room, or no such booking of the caller's)
-    resource function get rooms/[string roomId]() returns Room|ErrorUnauthorized|ErrorNotFound|http:NotImplemented {
-        return http:NOT_IMPLEMENTED;
+    resource function get rooms/[string roomId]() returns Room|ErrorUnauthorized|ErrorNotFound|http:InternalServerError {
+        return getRoomHandler(roomId);
     }
 
-    resource function get rooms/[string roomId]/busy\-times(string date, int 'limit = 20, int offset = 0) returns inline_response_200_1|ErrorBadRequest|ErrorUnauthorized|ErrorNotFound|http:NotImplemented {
-        return http:NOT_IMPLEMENTED;
+    resource function get rooms/[string roomId]/busy\-times(string date, int 'limit = 20, int offset = 0) returns inline_response_200_1|ErrorBadRequest|ErrorUnauthorized|ErrorNotFound|http:InternalServerError {
+        return busyTimesHandler(roomId, date, 'limit, offset);
     }
 
     # Book a room as the caller; refused with a reason when it clashes, exceeds capacity, starts in the past or is a third upcoming booking
