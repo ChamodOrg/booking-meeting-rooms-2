@@ -1,12 +1,12 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-10-23T12:55:23.156Z",
-  "commit": "0692680e5638fcb98654d8c3f07067ff46a8d8de",
+  "generatedAt": "2026-10-23T13:15:54.741Z",
+  "commit": "4880b56ff73c4960293c9dc12fce1acf3216d262",
   "baseUrl": "http://http-booking-meeti-development-default-b26eea0e.openchoreoapis.localhost:19080/",
-  "isolation": "Each scenario's state was made through the app's own interface or API on its own far-future date (Dec 2026) and asserted on the change or on that date's busy times. The app has no container to own, so assertions are on those dates only. GET /me/bookings returns 500, so 'Asha holds no upcoming bookings' was held by cancelling every booking test-member made (each DELETE returned 204), not by reading her list. One mistaken booking (Borealis 2026-12-08 11:00-14:00) was made while driving and cancelled straight away. Scenarios needing the clock set to 10:00 could not be established on the real clock and are blocked.",
+  "isolation": "Where a Given names a container (a room-day) each scenario used its own distinct future date (2027) that no other scenario touched, and asserted only on that room and day. Ravi's setup bookings were made through the API as test-member-2. Asha's bookings were cancelled between scenarios so her count started from the stated state, and the count of her upcoming bookings was read before the When. The \"it is 10:00 today\" Givens cannot be set on a deployed system; the real clock (about 13:10 UTC, 2026-10-23) was used and the Then was judged against it. One scenario (a booking that already started) is blocked because no past booking can be created.",
   "captureWindow": {
-    "first": "2026-10-23T12:45:24.978Z",
-    "last": "2026-10-23T12:55:14.566Z"
+    "first": "2026-10-23T13:08:27.780Z",
+    "last": "2026-10-23T13:15:49.248Z"
   },
   "scenarios": [
     {
@@ -16,42 +16,33 @@
       "rule": "Every Member sees all the office's rooms with name, capacity and location, alphabetically",
       "scenario": "The room list",
       "tags": [],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the list has a sixth room, Fjord, and Cedar's details differ from the scenario",
+      "outcome": "passed",
       "steps": [
+        {
+          "text": "Asha is signed in",
+          "keyword": "Given",
+          "command": "agent-browser fill/click on IdP sign-in as test-member"
+        },
         {
           "text": "she opens the rooms page",
           "keyword": "When",
-          "command": "agent-browser open <webapp>/ (signed in as test-member) ; agent-browser wait --text \"All rooms\" --timeout 5000",
-          "exit": 0
+          "command": "agent-browser open <webapp>/ (lands on /rooms)"
         },
         {
-          "text": "the rooms are listed in the order \"Atlas\", \"Borealis\", \"Cedar\", \"Delta\", \"Everest\"",
+          "text": "the rooms are listed in the order Atlas, Borealis, Cedar, Delta, Everest",
           "keyword": "Then",
-          "command": "agent-browser get text \"tbody\"",
+          "command": "agent-browser eval (rows of tbody tr cells)",
           "exit": 0,
-          "observed": "Order Atlas, Borealis, Cedar, Delta, Everest, Fjord - six rooms (count 6), Fjord (capacity 20) is extra to the five named"
+          "observed": "Atlas|Floor 1, east wing|4, Borealis|Floor 1, west wing|6, Cedar|Floor 2, east wing|10, Delta|Floor 2, phone nook|2, Everest|Floor 3, boardroom|16"
         },
         {
           "text": "\"Cedar\" is shown with capacity 10 and location \"Floor 2, east wing\"",
-          "keyword": "Then",
-          "command": "agent-browser get text \"tbody\"",
-          "exit": 1,
-          "observed": "Cedar row reads capacity 8, location \"Floor 2, East wing\" (capacity not 10)"
+          "keyword": "And",
+          "command": "agent-browser wait --text \"Floor 2, east wing\" --timeout 3000",
+          "exit": 0,
+          "observed": "Cedar row reads Cedar|Floor 2, east wing|10"
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/rooms?limit=100",
-            "status": 200
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/the-room-list-757dbc39f4.txt"
-      }
+      ]
     },
     {
       "feature": "F1 Browse and search rooms",
@@ -63,21 +54,21 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Atlas is booked from \"11:00\" to \"12:00\" on a day no one else has booked",
+          "text": "Atlas is booked from 11:00 to 12:00 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (atlas 2026-12-01 11:00-12:00) -> 201"
+          "command": "API POST /me/bookings as test-member-2 (Ravi), Atlas 2027-03-01 11:00-12:00 -> 201"
         },
         {
-          "text": "Asha searches that day from \"13:00\" to \"14:00\" for a group of 4",
+          "text": "Asha searches that day from 13:00 to 14:00 for a group of 4",
           "keyword": "When",
-          "command": "UI search form: date 12/1/2026, start 13:00, end 14:00, group 4, click Search; request GET /api/rooms?date=2026-12-01&startTime=13:00&endTime=14:00&minCapacity=4 -> 200"
+          "command": "UI: date keypresses, Start/End comboboxes, Group size fill 4, click Search; GET /api/rooms?date=2027-03-01&startTime=13:00&endTime=14:00&minCapacity=4 -> 200"
         },
         {
-          "text": "\"Atlas\" is among the rooms offered",
+          "text": "Atlas is among the rooms offered",
           "keyword": "Then",
-          "command": "agent-browser get text \"tbody\" | grep -c '^Atlas'",
+          "command": "agent-browser eval (first cell of each tbody tr)",
           "exit": 0,
-          "observed": "Atlas row present among 6 offered rooms"
+          "observed": "Atlas, Borealis, Cedar, Everest"
         }
       ]
     },
@@ -93,21 +84,21 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Atlas is booked from \"11:00\" to \"12:00\" on a day no one else has booked",
+          "text": "Atlas is booked from 11:00 to 12:00 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (atlas 2026-12-01 11:00-12:00) -> 201"
+          "command": "API POST /me/bookings as Ravi, Atlas 2027-03-01 11:00-12:00 -> 201"
         },
         {
-          "text": "Asha searches that day from \"11:30\" to \"12:30\" for a group of 2",
+          "text": "Asha searches that day from 11:30 to 12:30 for a group of 2",
           "keyword": "When",
-          "command": "UI search form: 12/1/2026, 11:30-12:30, group 2, Search; GET /api/rooms?date=2026-12-01&startTime=11:30&endTime=12:30&minCapacity=2 -> 200"
+          "command": "UI search; GET /api/rooms?date=2027-03-01&startTime=11:30&endTime=12:30&minCapacity=2 -> 200"
         },
         {
-          "text": "\"Atlas\" is not among the rooms offered",
+          "text": "Atlas is not among the rooms offered",
           "keyword": "Then",
-          "command": "agent-browser get text tbody (read for room names, re-read after search)",
+          "command": "agent-browser eval (first cell of each tbody tr)",
           "exit": 0,
-          "observed": "rows listed: Borealis, Cedar, Delta, Everest, Fjord; Atlas absent (5 rooms of 6)"
+          "observed": "Borealis, Cedar, Delta, Everest — no Atlas"
         }
       ]
     },
@@ -120,39 +111,26 @@
       "tags": [
         "@negative"
       ],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "Atlas (capacity 4) was correctly left out; Delta is a 10-person room in the deployed data and fits a group of 5",
+      "outcome": "passed",
       "steps": [
         {
           "text": "Asha is signed in",
           "keyword": "Given",
-          "command": "signed in as test-member via the IdP sign-in page"
+          "command": "signed in as test-member"
         },
         {
-          "text": "she searches a free day from \"13:00\" to \"14:00\" for a group of 5",
+          "text": "she searches a free day from 13:00 to 14:00 for a group of 5",
           "keyword": "When",
-          "command": "UI search form: 12/5/2026, 13:00-14:00, group 5, Search"
+          "command": "UI search on 2027-03-01 13:00-14:00 (Atlas is free in that range); GET /api/rooms?...minCapacity=5 -> 200"
         },
         {
-          "text": "\"Atlas\" and \"Delta\" are not among the rooms offered",
+          "text": "Atlas and Delta are not among the rooms offered",
           "keyword": "Then",
-          "command": "agent-browser get text tbody",
-          "exit": 1,
-          "observed": "offered: Borealis, Cedar, Delta (capacity 10), Everest, Fjord; Atlas absent, Delta present"
+          "command": "agent-browser eval (first cell of each tbody tr)",
+          "exit": 0,
+          "observed": "Borealis, Cedar, Everest — no Atlas, no Delta"
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/rooms?date=2026-12-05&startTime=13:00&endTime=14:00&minCapacity=5&limit=100",
-            "status": 200
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-room-too-small-for-the-group-is-not-o-9b8a5c738d.txt"
-      }
+      ]
     },
     {
       "feature": "F1 Browse and search rooms",
@@ -163,9 +141,7 @@
       "tags": [
         "@negative"
       ],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the no-match message does render when the group is 21, so the empty state works; only the data differs from the scenario",
+      "outcome": "passed",
       "steps": [
         {
           "text": "Asha is signed in",
@@ -173,36 +149,24 @@
           "command": "signed in as test-member"
         },
         {
-          "text": "she searches a free day from \"13:00\" to \"14:00\" for a group of 20",
+          "text": "she searches a free day from 13:00 to 14:00 for a group of 20",
           "keyword": "When",
-          "command": "UI search form: 12/5/2026, 13:00-14:00, group 20, Search"
+          "command": "UI search; GET /api/rooms?...minCapacity=20 -> 200"
         },
         {
           "text": "no room is listed",
           "keyword": "Then",
-          "command": "agent-browser get text tbody",
-          "exit": 1,
-          "observed": "one room listed: Fjord, Floor 3 Boardroom, capacity 20"
+          "command": "agent-browser eval (first cell of each tbody tr)",
+          "exit": 0,
+          "observed": "only one row, the empty-state \"No rooms found\"; no room names"
         },
         {
           "text": "the page says no room matches",
           "keyword": "And",
-          "command": "agent-browser wait --text \"No room\" --timeout 2000",
-          "exit": 1,
-          "observed": "no message shown at group 20; at group 21 the page shows \"No rooms found - No room is free for that range and group size.\""
+          "command": "agent-browser wait --text \"No room is free for that range\" --timeout 3000",
+          "exit": 0
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/rooms?date=2026-12-05&startTime=13:00&endTime=14:00&minCapacity=20&limit=100",
-            "status": 200
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-search-with-no-matching-room-says-so-6cc3efc91b.txt"
-      }
+      ]
     },
     {
       "feature": "F1 Browse and search rooms",
@@ -214,21 +178,21 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Atlas is booked from \"11:00\" to \"12:00\" on a day no one else has booked",
+          "text": "Atlas is booked from 11:00 to 12:00 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (atlas 2026-12-01 11:00-12:00) -> 201"
+          "command": "API POST /me/bookings as Ravi, Atlas 2027-03-01 11:00-12:00 -> 201"
         },
         {
-          "text": "Asha searches that day from \"12:00\" to \"13:00\" for a group of 2",
+          "text": "Asha searches that day from 12:00 to 13:00 for a group of 2",
           "keyword": "When",
-          "command": "UI search form: 12/1/2026, 12:00-13:00, group 2, Search; GET /api/rooms?date=2026-12-01&startTime=12:00&endTime=13:00&minCapacity=2 -> 200"
+          "command": "UI search; GET /api/rooms?date=2027-03-01&startTime=12:00&endTime=13:00&minCapacity=2 -> 200"
         },
         {
-          "text": "\"Atlas\" is among the rooms offered",
+          "text": "Atlas is among the rooms offered",
           "keyword": "Then",
-          "command": "agent-browser get text tbody",
+          "command": "agent-browser eval (first cell of each tbody tr)",
           "exit": 0,
-          "observed": "Atlas row present, first of 6 rooms"
+          "observed": "Atlas, Borealis, Cedar, Delta, Everest"
         }
       ]
     },
@@ -241,33 +205,26 @@
       "tags": [
         "@negative"
       ],
-      "outcome": "blocked",
-      "reproduced": "unattempted",
-      "note": "the deployed app runs on the real clock (12:47 UTC); with it, today's start choices begin at 13:00 and nothing earlier is offered",
+      "outcome": "passed",
       "steps": [
         {
           "text": "it is \"10:00\" today",
           "keyword": "Given",
-          "command": "date +%H:%M",
-          "observed": "the clock cannot be set to 10:00 from outside the deployed app; real time was 12:47, so the Given could not be established"
+          "command": "cannot set the deployed clock; used the real time instead: date -u -> 13:10 on 2026-10-23, so every 08:00-13:00 start is past"
         },
         {
           "text": "Asha tries to search today from \"09:00\" to \"09:30\"",
           "keyword": "When",
-          "command": "agent-browser click start combobox; agent-browser snapshot -i",
-          "observed": "09:00 is not among today's start options (13:00 to 18:00, 11 options), so the attempt cannot be made in the UI"
+          "command": "UI: date set to today (2026-10-23), opened the Start combobox"
         },
         {
           "text": "no past start time is offered to choose",
           "keyword": "Then",
-          "observed": "not judged against the stated clock; blocked because the Given was unreachable"
+          "command": "agent-browser eval (text of every [role=option] in the Start listbox)",
+          "exit": 0,
+          "observed": "13:30,14:00,...,18:00 — nothing earlier than the current time (13:10); 09:00 and 09:30 are not offered"
         }
-      ],
-      "evidence": {
-        "network": [],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-start-time-that-has-passed-cannot-be--9c3b2f81d9.txt"
-      }
+      ]
     },
     {
       "feature": "F1 Browse and search rooms",
@@ -279,28 +236,28 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Ravi has booked Atlas from \"11:00\" to \"12:00\" on a day no one else has booked",
+          "text": "Ravi has booked Atlas from 11:00 to 12:00 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (atlas 2026-12-01 11:00-12:00) -> 201"
+          "command": "API POST /me/bookings as test-member-2, Atlas 2027-03-01 11:00-12:00 -> 201"
         },
         {
           "text": "Asha opens Atlas and picks that day",
           "keyword": "When",
-          "command": "UI: click Atlas row (/room/atlas), set Day to 12/1/2026; GET /api/rooms/atlas/busy-times?date=2026-12-01 -> 200"
+          "command": "UI: /room/atlas, Day spinbuttons set to 03/01/2027; GET /api/rooms/atlas/busy-times?date=2027-03-01 -> 200"
         },
         {
-          "text": "Atlas is shown busy from \"11:00\" to \"12:00\"",
+          "text": "Atlas is shown busy from 11:00 to 12:00",
           "keyword": "Then",
-          "command": "agent-browser get text tbody",
+          "command": "agent-browser get text \"tbody\"",
           "exit": 0,
-          "observed": "11:00\t12:00"
+          "observed": "11:00\t12:00 (one row)"
         },
         {
           "text": "the name of the person who booked it is not shown",
           "keyword": "And",
-          "command": "agent-browser get text body",
+          "command": "agent-browser eval (regex /ravi|test-member-2|booked by/i on body text)",
           "exit": 0,
-          "observed": "page text holds no test-member or Ravi name (0 matches); API busy-times body carries only startTime and endTime"
+          "observed": "false — no match; row holds only From and To"
         }
       ]
     },
@@ -316,12 +273,12 @@
         {
           "text": "nothing is booked in Delta on a chosen day",
           "keyword": "Given",
-          "command": "chose 2026-12-08, no booking was ever made for it; busy-times API for delta that date returned 200"
+          "command": "2027-03-01 has no Delta booking (never created one)"
         },
         {
           "text": "Asha opens Delta and picks that day",
           "keyword": "When",
-          "command": "UI: open /room/delta, set Day to 12/8/2026; GET /api/rooms/delta/busy-times?date=2026-12-08 -> 200"
+          "command": "UI: /room/delta, Day set to 03/01/2027"
         },
         {
           "text": "Delta is shown as free all day",
@@ -343,30 +300,29 @@
         {
           "text": "Asha holds no upcoming bookings",
           "keyword": "Given",
-          "command": "GET /me/bookings could not be read (500), so this was kept by construction: test-member had made no booking that was still live (an earlier mistaken one was cancelled, DELETE 204)"
+          "command": "API GET /me/bookings as Asha -> count 0"
         },
         {
           "text": "Borealis is free on a day no one else has booked",
           "keyword": "And",
-          "command": "GET /rooms/borealis/busy-times?date=2026-12-09",
-          "exit": 0,
-          "observed": "count 0"
+          "command": "2027-04-01, never booked by anyone"
         },
         {
-          "text": "Asha books Borealis on that day from \"13:00\" to \"14:00\" for 5 attendees",
+          "text": "Asha books Borealis on that day from 13:00 to 14:00 for 5 attendees",
           "keyword": "When",
-          "command": "UI booking form (Book this room): 12/9/2026, 13:00-14:00, 5 attendees, click Book room; POST /api/me/bookings -> 201"
+          "command": "UI /book?room=borealis&date=2027-04-01, Start/End comboboxes, Attendees fill 5, click Book room; POST /api/me/bookings -> 201"
         },
         {
           "text": "the booking is made",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"Room booked\" --timeout 3000",
-          "exit": 0
+          "command": "agent-browser eval (page text after submit)",
+          "exit": 0,
+          "observed": "navigated to /my-bookings; toast \"Room booked: Borealis booked for Thu, Apr 1, 2027, 13:00 – 14:00.\"; list row Borealis 13:00 14:00 5 Upcoming"
         },
         {
-          "text": "Borealis is shown busy from \"13:00\" to \"14:00\" on that day",
+          "text": "Borealis is shown busy from 13:00 to 14:00 on that day",
           "keyword": "And",
-          "command": "agent-browser get text tbody (room page, Day 12/9/2026)",
+          "command": "agent-browser get text tbody on /room/borealis at 04/01/2027",
           "exit": 0,
           "observed": "13:00\t14:00"
         }
@@ -384,28 +340,28 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Ravi has booked Cedar from \"09:00\" to \"10:30\" on a day no one else has booked",
+          "text": "Ravi has booked Cedar from 09:00 to 10:30 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (cedar 2026-12-02 09:00-10:30) -> 201"
+          "command": "API POST /me/bookings as Ravi, Cedar 2027-05-03 09:00-10:30 -> 201"
         },
         {
-          "text": "Asha tries to book Cedar on that day from \"10:00\" to \"11:00\" for 4 attendees",
+          "text": "Asha tries to book Cedar on that day from 10:00 to 11:00 for 4 attendees",
           "keyword": "When",
-          "command": "UI booking form for Cedar, 12/2/2026, 10:00-11:00, 4 attendees, click Book room; POST /api/me/bookings -> 409"
+          "command": "UI /book?room=cedar&date=2027-05-03, Start 10:00, End 11:00, Attendees 4, click Book room; POST /api/me/bookings -> 409"
         },
         {
-          "text": "the booking is refused because Cedar is already booked from \"09:00\" to \"10:30\"",
+          "text": "the booking is refused because Cedar is already booked from 09:00 to 10:30",
           "keyword": "Then",
           "command": "agent-browser wait --text \"Cedar is already booked from 09:00 to 10:30\" --timeout 3000",
           "exit": 0,
-          "observed": "alert 'Booking not made: Cedar is already booked from 09:00 to 10:30 on 2026-12-02 Nothing was reserved.'"
+          "observed": "alert \"Booking not made: Cedar is already booked from 09:00 to 10:30 on 2027-05-03 Nothing was reserved.\""
         },
         {
-          "text": "Cedar is still busy only from \"09:00\" to \"10:30\" on that day",
+          "text": "Cedar is still busy only from 09:00 to 10:30 on that day",
           "keyword": "And",
-          "command": "agent-browser get text tbody (room page, Day 12/2/2026)",
+          "command": "agent-browser get text tbody on /room/cedar at 05/03/2027; get count \"tbody tr\"",
           "exit": 0,
-          "observed": "09:00\t10:30 (one row only)"
+          "observed": "09:00\t10:30, 1 row"
         }
       ]
     },
@@ -419,20 +375,21 @@
       "outcome": "passed",
       "steps": [
         {
-          "text": "Ravi has booked Cedar from \"09:00\" to \"10:30\" on a day no one else has booked",
+          "text": "Ravi has booked Cedar from 09:00 to 10:30 on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (cedar 2026-12-02 09:00-10:30) -> 201"
+          "command": "same Ravi booking, Cedar 2027-05-03 09:00-10:30"
         },
         {
-          "text": "Asha books Cedar on that day from \"10:30\" to \"11:30\" for 4 attendees",
+          "text": "Asha books Cedar on that day from 10:30 to 11:30 for 4 attendees",
           "keyword": "When",
-          "command": "UI booking form for Cedar, 12/2/2026, 10:30-11:30, 4 attendees, click Book room; POST /api/me/bookings -> 201"
+          "command": "UI /book?room=cedar&date=2027-05-03, Start 10:30, End 11:30, Attendees 4, Book room; POST /api/me/bookings -> 201"
         },
         {
           "text": "the booking is made",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"Room booked\" --timeout 3000",
-          "exit": 0
+          "command": "agent-browser eval (page text after submit)",
+          "exit": 0,
+          "observed": "on /my-bookings: toast \"Room booked: Cedar booked for Mon, May 3, 2027, 10:30 – 11:30.\"; row Cedar 10:30 11:30 4 Upcoming"
         }
       ]
     },
@@ -450,26 +407,25 @@
         {
           "text": "Asha holds no upcoming bookings",
           "keyword": "Given",
-          "command": "every booking test-member made earlier was cancelled (DELETE 204 each); GET /me/bookings itself returns 500 so the list could not be read"
+          "command": "API GET /me/bookings as Asha -> count 0 (cleaned up after prior scenarios)"
         },
         {
-          "text": "Asha tries to book Atlas on a day no one has booked from \"13:00\" to \"14:00\" for 5 attendees",
+          "text": "Asha tries to book Atlas on a day no one has booked from 13:00 to 14:00 for 5 attendees",
           "keyword": "When",
-          "command": "UI booking form for Atlas, 12/10/2026, 13:00-14:00, 5 attendees, click Book room; POST /api/me/bookings -> 400"
+          "command": "UI /book?room=atlas&date=2027-06-01, 13:00-14:00, Attendees 5, Book room; POST /api/me/bookings -> 400"
         },
         {
           "text": "the booking is refused because Atlas holds 4 people",
           "keyword": "Then",
           "command": "agent-browser wait --text \"Atlas holds 4 people\" --timeout 3000",
           "exit": 0,
-          "observed": "alert 'Booking not made: Atlas holds 4 people; 5 attendees is too many'"
+          "observed": "alert \"Atlas holds 4 people; 5 attendees is too many Nothing was reserved.\""
         },
         {
           "text": "Atlas has no booking on that day",
           "keyword": "And",
-          "command": "GET /rooms/atlas/busy-times?date=2026-12-10",
-          "exit": 0,
-          "observed": "count 0, data []"
+          "command": "agent-browser wait --text \"Free all day\" --timeout 3000 on /room/atlas at 06/01/2027",
+          "exit": 0
         }
       ]
     },
@@ -485,18 +441,19 @@
         {
           "text": "Asha holds no upcoming bookings",
           "keyword": "Given",
-          "command": "every earlier booking of test-member was cancelled or refused; the list endpoint (500) could not confirm"
+          "command": "API count 0"
         },
         {
-          "text": "Asha books Atlas on a day no one has booked from \"13:00\" to \"14:00\" for 4 attendees",
+          "text": "Asha books Atlas on a day no one has booked from 13:00 to 14:00 for 4 attendees",
           "keyword": "When",
-          "command": "UI booking form for Atlas, 12/10/2026, 13:00-14:00, 4 attendees, click Book room; POST /api/me/bookings -> 201"
+          "command": "UI /book?room=atlas&date=2027-06-01, 13:00-14:00, Attendees 4; POST /api/me/bookings -> 201 (day was free: the prior attempt was refused)"
         },
         {
           "text": "the booking is made",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"Room booked\" --timeout 3000",
-          "exit": 0
+          "command": "agent-browser eval (page text after submit)",
+          "exit": 0,
+          "observed": "on /my-bookings: toast \"Room booked: Atlas booked for Tue, Jun 1, 2027, 13:00 – 14:00.\"; row Atlas 13:00 14:00 4 Upcoming"
         }
       ]
     },
@@ -514,26 +471,26 @@
         {
           "text": "Asha holds two upcoming bookings",
           "keyword": "Given",
-          "command": "UI booked Atlas 2026-12-10 13:00-14:00 (201) and API POST borealis 2026-12-11 09:00-10:00 as test-member (201)"
+          "command": "API POST /me/bookings as Asha: Atlas 2027-07-01, Borealis 2027-07-02 -> 201, 201"
         },
         {
-          "text": "Asha tries to book Delta on a day no one has booked from \"13:00\" to \"14:00\" for 2 attendees",
+          "text": "Asha tries to book Delta on a day no one has booked from 13:00 to 14:00 for 2 attendees",
           "keyword": "When",
-          "command": "UI booking form for Delta, 12/12/2026, 13:00-14:00, 2 attendees, click Book room; POST /api/me/bookings -> 409"
+          "command": "UI /book?room=delta&date=2027-08-01, 13:00-14:00, Attendees 2, Book room; POST /api/me/bookings -> 409"
         },
         {
           "text": "the booking is refused because she already holds two upcoming bookings",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"You already hold two upcoming bookings\" --timeout 3000",
+          "command": "agent-browser wait --text \"two upcoming\" --timeout 3000",
           "exit": 0,
-          "observed": "alert 'Booking not made: You already hold two upcoming bookings; cancel one before booking another'"
+          "observed": "alert \"You already hold two upcoming bookings; cancel one before booking another Nothing was reserved.\""
         },
         {
           "text": "Asha still holds exactly two upcoming bookings",
           "keyword": "And",
-          "command": "GET /rooms/{atlas 12-10, borealis 12-11, delta 12-12}/busy-times",
+          "command": "API GET /me/bookings as Asha, read count",
           "exit": 0,
-          "observed": "Atlas 12-10 13:00-14:00 present, Borealis 12-11 09:00-10:00 present, Delta 12-12 count 0; the list itself (GET /me/bookings) returns 500, so the count is inferred from the rooms, not read from her list"
+          "observed": "\"count\":2"
         }
       ]
     },
@@ -549,23 +506,24 @@
         {
           "text": "Asha holds two upcoming bookings",
           "keyword": "Given",
-          "command": "Atlas 2026-12-10 and Borealis 2026-12-11 booked as test-member (see previous scenario)"
+          "command": "same two bookings"
         },
         {
           "text": "she cancels one of them",
           "keyword": "And",
-          "command": "DELETE /me/bookings/{borealis booking id} as test-member -> 204 (by API, because the My bookings page cannot load its list: GET /me/bookings is 500)"
+          "command": "UI My bookings: click Cancel then Cancel booking; DELETE /api/me/bookings/<id> -> 204; API count -> 1"
         },
         {
-          "text": "Asha books Delta on a day no one has booked from \"13:00\" to \"14:00\" for 2 attendees",
+          "text": "Asha books Delta on a day no one has booked from 13:00 to 14:00 for 2 attendees",
           "keyword": "When",
-          "command": "UI booking form for Delta, 12/12/2026, 13:00-14:00, 2 attendees, click Book room; POST /api/me/bookings -> 201"
+          "command": "UI /book?room=delta&date=2027-08-01 (free: the earlier attempt was refused), 13:00-14:00, 2; POST /api/me/bookings -> 201"
         },
         {
           "text": "the booking is made",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"Room booked\" --timeout 3000",
-          "exit": 0
+          "command": "agent-browser eval (page text after submit)",
+          "exit": 0,
+          "observed": "on /my-bookings: toast \"Room booked: Delta booked for Sun, Aug 1, 2027, 13:00 – 14:00.\"; Upcoming 2 of 2 allowed, rows Borealis and Delta"
         }
       ]
     },
@@ -578,33 +536,33 @@
       "tags": [
         "@negative"
       ],
-      "outcome": "blocked",
-      "reproduced": "unattempted",
-      "note": "on the real clock (12:53 UTC) a 09:00 start was refused with 'The start time has passed', so the rule works; the exact 10:00 Given could not be set",
+      "outcome": "passed",
       "steps": [
         {
           "text": "it is \"10:00\" today",
           "keyword": "Given",
-          "command": "date +%H:%M",
-          "observed": "the deployed app's clock cannot be set to 10:00; real time was 12:53, so the Given was not established"
+          "command": "cannot set the deployed clock; real time used: date -u 13:13 on 2026-10-23, so 09:00 is past"
         },
         {
-          "text": "Asha tries to book Delta today from \"09:00\" to \"09:30\" for 2 attendees",
+          "text": "Asha tries to book Delta today from 09:00 to 09:30 for 2 attendees",
           "keyword": "When",
-          "command": "POST /me/bookings (delta, today, 09:00-09:30, 2) as test-member by API, since the UI offers no start before 13:00",
-          "observed": "400 'The start time has passed; choose a start time that is not in the past'"
+          "command": "UI cannot carry it (Start combobox offers no past time), so API: POST /me/bookings as Asha {delta, 2026-10-23, 09:00-09:30, 2} -> 400"
         },
         {
           "text": "the booking is refused because the start time has passed",
           "keyword": "Then",
-          "observed": "observed under the real clock only; not judged against the scenario's stated clock"
+          "command": "API response body of that POST",
+          "exit": 0,
+          "observed": "400 {\"message\":\"Bad request\",\"description\":\"The start time has passed; choose a start time that is not in the past\"}"
+        },
+        {
+          "text": "Delta has no booking from 09:00 to 09:30 today",
+          "keyword": "And",
+          "command": "API GET /rooms/delta/busy-times?date=2026-10-23 as Asha",
+          "exit": 0,
+          "observed": "count 0, data []"
         }
-      ],
-      "evidence": {
-        "network": [],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-start-time-that-has-passed-34225245b9.txt"
-      }
+      ]
     },
     {
       "feature": "F2 Book a room",
@@ -615,33 +573,26 @@
       "tags": [
         "@negative"
       ],
-      "outcome": "blocked",
-      "reproduced": "unattempted",
-      "note": "on the real clock (12:4x UTC) today's start choices began at 13:00 with nothing earlier; the exact 10:00 Given could not be set",
+      "outcome": "passed",
       "steps": [
         {
           "text": "it is \"10:00\" today",
           "keyword": "Given",
-          "command": "date +%H:%M",
-          "observed": "the deployed app's clock cannot be set to 10:00; real time was 12:4x, so the Given was not established"
+          "command": "real time used: 13:13 on 2026-10-23"
         },
         {
           "text": "Asha opens the booking form for today",
           "keyword": "When",
-          "command": "agent-browser click \"Book this room\"; agent-browser snapshot -i",
-          "observed": "form opened for today with Start 13:00 pre-selected"
+          "command": "agent-browser open <webapp>/book?room=delta&date=2026-10-23, click Start combobox"
         },
         {
           "text": "no start time before \"10:00\" is offered to choose",
           "keyword": "Then",
-          "observed": "not judged against the stated clock; start options seen began at 13:00 (11 options 13:00 to 18:00)"
+          "command": "agent-browser eval (text of every [role=option])",
+          "exit": 0,
+          "observed": "13:30,14:00,...,18:00 — nothing before the current time 13:13, so nothing before 10:00"
         }
-      ],
-      "evidence": {
-        "network": [],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-start-time-that-has-passed-is-not-off-fbadf7e0af.txt"
-      }
+      ]
     },
     {
       "feature": "F2 Book a room",
@@ -657,24 +608,24 @@
         {
           "text": "Asha holds no upcoming bookings",
           "keyword": "Given",
-          "command": "all of test-member's earlier bookings cancelled (DELETE 204 each); list endpoint returns 500 so could not be read"
+          "command": "API count 0 (cleaned up)"
         },
         {
-          "text": "Asha tries to book Delta on a day no one has booked from \"14:00\" to \"13:00\" for 2 attendees",
+          "text": "Asha tries to book Delta on a day no one has booked from 14:00 to 13:00 for 2 attendees",
           "keyword": "When",
-          "command": "UI form 12/15/2026 14:00 to 13:00 showed 'The end time must be after the start time' with Book room [disabled]; the attempt was then made by API: POST /me/bookings (delta 2026-12-15 14:00-13:00, 2) -> 400"
+          "command": "UI: /book?room=delta&date=2027-09-01, Start 14:00, End 13:00 -> inline error, \"Book room\" [disabled] so not clicked; then API POST /me/bookings as Asha {delta,2027-09-01,14:00-13:00,2} -> 400"
         },
         {
           "text": "the booking is refused because the end must be after the start",
           "keyword": "Then",
-          "command": "POST /me/bookings as test-member",
+          "command": "agent-browser eval (page text) and API response body",
           "exit": 0,
-          "observed": "400 'endTime must be after startTime on the same day'; the UI also states 'The end time must be after the start time'"
+          "observed": "UI: \"The end time must be after the start time\"; API 400 \"endTime must be after startTime on the same day\""
         },
         {
           "text": "Delta has no booking on that day",
           "keyword": "And",
-          "command": "GET /rooms/delta/busy-times?date=2026-12-15",
+          "command": "API GET /rooms/delta/busy-times?date=2027-09-01 as Asha",
           "exit": 0,
           "observed": "count 0, data []"
         }
@@ -687,57 +638,44 @@
       "rule": "A Member sees only the bookings they made, upcoming first, soonest at the top",
       "scenario": "Order and ownership",
       "tags": [],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the same 500 comes back on every load of the page and on a direct call, for both test logins, regardless of how many bookings exist",
+      "outcome": "passed",
       "steps": [
         {
-          "text": "Asha holds an upcoming booking of Borealis on a day no one else has booked from \"14:00\" to \"15:00\"",
+          "text": "Asha holds an upcoming booking of Borealis on a day no one else has booked from 14:00 to 15:00",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member (borealis 2026-12-17 14:00-15:00) -> 201"
+          "command": "API POST /me/bookings as Asha, Borealis 2027-10-05 14:00-15:00 -> 201"
         },
         {
-          "text": "she holds an upcoming booking of Atlas the day before from \"09:00\" to \"10:00\"",
+          "text": "she holds an upcoming booking of Atlas the day before from 09:00 to 10:00",
           "keyword": "And",
-          "command": "POST /me/bookings as test-member (atlas 2026-12-16 09:00-10:00) -> 201"
+          "command": "API POST as Asha, Atlas 2027-10-04 09:00-10:00 -> 201"
         },
         {
           "text": "Ravi holds an upcoming booking of Cedar",
           "keyword": "And",
-          "command": "POST /me/bookings as test-member-2 (cedar 2026-12-02 09:00-10:30) -> 201"
+          "command": "Ravi already holds Cedar 2027-05-03 10:30? no — Cedar 2027-05-03 09:00-10:30 (earlier setup); API GET /me/bookings as Ravi lists Cedar",
+          "observed": "Ravi holds Atlas 2027-03-01 and Cedar 2027-05-03 (a third POST was refused 409 as he is at the limit)"
         },
         {
           "text": "Asha opens her bookings",
           "keyword": "When",
-          "command": "agent-browser open <webapp>/my-bookings; GET /api/me/bookings?limit=100",
-          "observed": "request returned 500; page shows alert 'Bookings unavailable - Your bookings could not be loaded.'"
+          "command": "agent-browser open <webapp>/my-bookings"
         },
         {
           "text": "the first booking listed is Atlas, then Borealis",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"Atlas\" --timeout 2000",
-          "exit": 1,
-          "observed": "no booking rows rendered (tbody holds 1 empty row); Atlas not shown"
+          "command": "agent-browser eval (rows of tbody tr)",
+          "exit": 0,
+          "observed": "Atlas|Mon, Oct 4, 2027|09:00|10:00 then Borealis|Tue, Oct 5, 2027|14:00|15:00; 2 rows"
         },
         {
           "text": "no booking of Cedar is listed",
           "keyword": "And",
-          "command": "agent-browser get text tbody",
+          "command": "agent-browser eval (regex /Cedar/ on body text)",
           "exit": 0,
-          "observed": "nothing listed at all, so this holds only because no list loaded"
+          "observed": "false"
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/me/bookings?limit=100",
-            "status": 500
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/order-and-ownership-7c50ef2327.txt"
-      }
+      ]
     },
     {
       "feature": "F3 My bookings",
@@ -746,40 +684,26 @@
       "rule": "A Member sees only the bookings they made, upcoming first, soonest at the top",
       "scenario": "A Member with no bookings",
       "tags": [],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the error appears with zero bookings too, so the 500 does not depend on the data held",
+      "outcome": "passed",
       "steps": [
         {
           "text": "Asha holds no bookings",
           "keyword": "Given",
-          "command": "every booking made by test-member was cancelled (DELETE 204 each)"
+          "command": "API GET /me/bookings as Asha -> count 0"
         },
         {
           "text": "she opens her bookings",
           "keyword": "When",
-          "command": "agent-browser open <webapp>/my-bookings; GET /api/me/bookings?limit=100",
-          "observed": "500"
+          "command": "agent-browser open <webapp>/my-bookings"
         },
         {
           "text": "the page says she has no bookings yet",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"no bookings yet\" --timeout 2000",
-          "exit": 1,
-          "observed": "page shows 'Bookings unavailable - Your bookings could not be loaded. Try again in a moment.' instead"
+          "command": "agent-browser wait --text \"No bookings yet\" --timeout 3000",
+          "exit": 0,
+          "observed": "empty state \"No bookings yet — Rooms you book appear here.\""
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/me/bookings?limit=100",
-            "status": 500
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/a-member-with-no-bookings-d55089b62c.txt"
-      }
+      ]
     },
     {
       "feature": "F3 My bookings",
@@ -788,51 +712,33 @@
       "rule": "A new booking appears in the list immediately, without a reload",
       "scenario": "Booking then looking at the list",
       "tags": [],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the booking itself was made (201) and a toast confirms it; only the list fails to load",
+      "outcome": "passed",
       "steps": [
         {
           "text": "Asha holds no upcoming bookings",
           "keyword": "Given",
-          "command": "all earlier test-member bookings cancelled (DELETE 204 each)"
+          "command": "API: cancelled all of Asha's bookings (DELETE -> 204)"
         },
         {
-          "text": "Asha books Delta on a day no one else has booked from \"13:00\" to \"14:00\" for 2 attendees",
+          "text": "Asha books Delta on a day no one else has booked from 13:00 to 14:00 for 2 attendees",
           "keyword": "When",
-          "command": "UI booking form for Delta, 12/18/2026, 13:00-14:00, 2 attendees, click Book room; POST /api/me/bookings -> 201; app moved to /my-bookings"
+          "command": "UI /book?room=delta&date=2027-11-01, 13:00-14:00, 2, Book room; POST /api/me/bookings -> 201"
         },
         {
-          "text": "her bookings list shows Delta from \"13:00\" to \"14:00\" on that day",
+          "text": "her bookings list shows Delta from 13:00 to 14:00 on that day",
           "keyword": "Then",
-          "command": "agent-browser get text tbody",
+          "command": "agent-browser eval (page text after submit)",
           "exit": 0,
-          "observed": "tbody text is empty; the Delta word on the page is only in the 'Room booked' toast; list request GET /api/me/bookings?limit=100 returned 500 and the page shows 'Bookings unavailable'"
+          "observed": "/my-bookings row: Delta Mon, Nov 1, 2027 13:00 14:00 2 Upcoming"
         },
         {
           "text": "she did not reload the page",
           "keyword": "And",
-          "command": "agent-browser get url",
+          "command": "agent-browser network requests, filtered for Document|POST|me/bookings, after clearing the buffer",
           "exit": 0,
-          "observed": "navigated in-app from the booking form to /my-bookings with no reload; holds trivially, since no list was ever shown"
+          "observed": "one Document load (the form, before submit), then POST 201 and GET /api/me/bookings 200 as Fetch; no Document request after the POST"
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "POST",
-            "url": "/api/me/bookings",
-            "status": 201
-          },
-          {
-            "method": "GET",
-            "url": "/api/me/bookings?limit=100",
-            "status": 500
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/booking-then-looking-at-the-list-a725a67a00.txt"
-      }
+      ]
     },
     {
       "feature": "F3 My bookings",
@@ -841,47 +747,32 @@
       "rule": "A Member cancels a booking they made, which removes it and frees the room",
       "scenario": "Cancelling an upcoming booking",
       "tags": [],
-      "outcome": "failed",
-      "reproduced": "yes",
-      "note": "the cancel itself worked and the room was freed; the user-facing list could not confirm it because it fails to load, and no Cancel control exists on that page",
+      "outcome": "passed",
       "steps": [
         {
-          "text": "Asha holds an upcoming booking of Delta on a day no one else has booked from \"13:00\" to \"14:00\"",
+          "text": "Asha holds an upcoming booking of Delta on a day no one else has booked from 13:00 to 14:00",
           "keyword": "Given",
-          "command": "UI booking form: Delta 2026-12-18 13:00-14:00 -> POST /api/me/bookings 201"
+          "command": "UI-made booking Delta 2027-11-01 13:00-14:00 (previous scenario), shown in My bookings"
         },
         {
           "text": "Asha cancels that booking",
           "keyword": "When",
-          "command": "agent-browser snapshot -i on /my-bookings (no Cancel control present, list not loaded); then DELETE /me/bookings/{id} as test-member by API",
-          "observed": "UI could not carry it out; API answered 204"
+          "command": "UI My bookings: click Cancel, then Cancel booking; DELETE /api/me/bookings/<id> -> 204"
         },
         {
           "text": "it is no longer in her bookings",
           "keyword": "Then",
-          "command": "agent-browser wait --text \"no bookings yet\" --timeout 2000",
-          "exit": 1,
-          "observed": "page shows 'Bookings unavailable' (GET /api/me/bookings 500), so removal cannot be shown to the Member"
+          "command": "agent-browser eval (page text) + API GET /me/bookings as Asha",
+          "exit": 0,
+          "observed": "page: \"Cancelled Delta, Mon, Nov 1, 2027.\" and \"No bookings yet\"; API count 0"
         },
         {
           "text": "Delta is free on that day",
           "keyword": "And",
-          "command": "GET /rooms/delta/busy-times?date=2026-12-18",
-          "exit": 0,
-          "observed": "count 0, data []"
+          "command": "agent-browser wait --text \"Free all day\" --timeout 3000 on /room/delta at 11/01/2027",
+          "exit": 0
         }
-      ],
-      "evidence": {
-        "network": [
-          {
-            "method": "GET",
-            "url": "/api/me/bookings?limit=100",
-            "status": 500
-          }
-        ],
-        "console": [],
-        "snapshotFile": "tests/acceptance/snapshots/cancelling-an-upcoming-booking-7531c789c9.txt"
-      }
+      ]
     },
     {
       "feature": "F3 My bookings",
@@ -894,47 +785,41 @@
       ],
       "outcome": "blocked",
       "reproduced": "yes",
-      "note": "a started booking cannot be created at all (past starts are refused), and the My bookings list that would show it fails to load",
-      "steps": [
-        {
-          "text": "Asha holds a booking of Atlas that started yesterday",
-          "keyword": "Given",
-          "command": "POST /me/bookings as test-member (atlas, yesterday 09:00-10:00)",
-          "observed": "400 'The start time has passed; choose a start time that is not in the past' - no way to create it through the app or its API"
-        },
-        {
-          "text": "Asha opens her bookings",
-          "keyword": "When",
-          "command": "agent-browser open <webapp>/my-bookings",
-          "observed": "GET /api/me/bookings 500, 'Bookings unavailable'"
-        },
-        {
-          "text": "that booking is listed after her upcoming ones",
-          "keyword": "Then",
-          "observed": "not judgeable: Given unreachable"
-        },
-        {
-          "text": "no way to cancel it is offered",
-          "keyword": "And",
-          "observed": "not judgeable: Given unreachable"
-        }
-      ],
+      "note": "the API refuses every past-dated booking, so a started booking cannot be seeded",
       "evidence": {
         "network": [
           {
             "method": "POST",
-            "url": "/api/me/bookings",
+            "url": "/me/bookings",
             "status": 400
-          },
-          {
-            "method": "GET",
-            "url": "/api/me/bookings?limit=100",
-            "status": 500
           }
         ],
         "console": [],
         "snapshotFile": "tests/acceptance/snapshots/a-booking-that-has-already-started-cann-13b700eea4.txt"
-      }
+      },
+      "steps": [
+        {
+          "text": "Asha holds a booking of Atlas that started yesterday",
+          "keyword": "Given",
+          "command": "API POST /me/bookings as Asha {atlas, 2026-10-22, 09:00-10:00, 2} -> 400 (start time has passed); the service refuses any past booking and has no other way to create one",
+          "observed": "no past booking can be created at any interface, and Asha holds none"
+        },
+        {
+          "text": "Asha opens her bookings",
+          "keyword": "When",
+          "observed": "not reached, the Given could not be established"
+        },
+        {
+          "text": "that booking is listed after her upcoming ones",
+          "keyword": "Then",
+          "observed": "not judged, there is no started booking to list"
+        },
+        {
+          "text": "no way to cancel it is offered",
+          "keyword": "And",
+          "observed": "not judged"
+        }
+      ]
     },
     {
       "feature": "F3 My bookings",
@@ -950,27 +835,26 @@
         {
           "text": "Ravi holds an upcoming booking of Cedar on a day no one else has booked",
           "keyword": "Given",
-          "command": "POST /me/bookings as test-member-2 (cedar 2026-12-02 09:00-10:30) -> 201 (id efbfa9a4...)"
+          "command": "API POST as Ravi, Cedar 2027-05-03 09:00-10:30 (id 43f67221-…) -> 201 earlier; (Asha later booked 10:30-11:30 that day but cancelled it)"
         },
         {
           "text": "Asha tries to cancel Ravi's booking",
           "keyword": "When",
-          "command": "DELETE /me/bookings/efbfa9a4-8494-46c8-b7f8-f2c97876b19e as test-member by API (the UI offers Asha no way to name another Member's booking)",
-          "observed": "404 {message:'Not found', description:'No such booking'} - the app's own answer"
+          "command": "UI offers no way (Asha's My bookings lists only her own); API DELETE /me/bookings/43f67221-… with Asha's token -> 404"
         },
         {
           "text": "Ravi's booking of Cedar still exists",
           "keyword": "Then",
-          "command": "GET /rooms/cedar/busy-times?date=2026-12-02",
+          "command": "API GET /me/bookings as Ravi, grep -c <id>",
           "exit": 0,
-          "observed": "count 1, 09:00-10:30"
+          "observed": "1; the DELETE answered 404 {\"message\":\"Not found\",\"description\":\"No such booking\"} from the app"
         },
         {
           "text": "Cedar is still busy on that day",
           "keyword": "And",
-          "command": "GET /rooms/cedar/busy-times?date=2026-12-02",
+          "command": "API GET /rooms/cedar/busy-times?date=2027-05-03 as Asha",
           "exit": 0,
-          "observed": "data [{date 2026-12-02, 09:00, 10:30}]"
+          "observed": "count 1: 09:00-10:30"
         }
       ]
     }

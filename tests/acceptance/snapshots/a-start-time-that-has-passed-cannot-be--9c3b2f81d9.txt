@@ -1,2 +1,0 @@
-- option "13:00" [selected]
-- option "13:30" ... option "18:00"
