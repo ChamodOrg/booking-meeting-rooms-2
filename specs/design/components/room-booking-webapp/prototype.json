@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 3,
+  "name": "Room booking",
+  "entryScreen": "screen.rooms",
+  "roles": [{ "id": "Member", "name": "Member" }],
+  "states": [
+    { "id": "state.default", "name": "Default" },
+    { "id": "state.empty", "name": "Nothing to show" },
+    { "id": "state.validation-error", "name": "Refused with a reason" },
+    { "id": "state.failed", "name": "Service unavailable" }
+  ],
+  "screens": [
+    { "id": "screen.rooms", "name": "Rooms", "roleIds": ["Member"] },
+    { "id": "screen.room", "name": "Room and busy times", "roleIds": ["Member"] },
+    { "id": "screen.book", "name": "Book a room", "roleIds": ["Member"] },
+    { "id": "screen.my-bookings", "name": "My bookings", "roleIds": ["Member"] },
+    { "id": "screen.account", "name": "Account", "roleIds": ["Member"] },
+    { "id": "screen.signed-out", "name": "Signed out", "roleIds": ["Member"] }
+  ],
+  "flows": [
+    { "id": "flow.browse", "name": "Browse rooms and see when one is busy", "roleId": "Member", "screenIds": ["screen.rooms", "screen.room"] },
+    { "id": "flow.search", "name": "Search for a free room", "roleId": "Member", "screenIds": ["screen.rooms"] },
+    { "id": "flow.book", "name": "Book a room", "roleId": "Member", "screenIds": ["screen.rooms", "screen.room", "screen.book", "screen.my-bookings"] },
+    { "id": "flow.cancel", "name": "Cancel a booking", "roleId": "Member", "screenIds": ["screen.my-bookings"] }
+  ]
+}
