@@ -1,1 +1,1 @@
-- alert: Bookings unavailable
+- (no page involved: Given attempted via API; response "The start time has passed; choose a start time that is not in the past")

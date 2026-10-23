@@ -1,3 +1,0 @@
-- alert: Bookings unavailable / Your bookings could not be loaded. Try again in a moment.
-- columnheader Room, Date, Start, End, Attendees, Status
-- rowgroup with no data rows
