@@ -1,0 +1,4 @@
+apiVersion = "agentic-engineer/v1"
+name = "booking-meeting-rooms-2"
+createdAt = "2026-10-23T10:07:46Z"
+idea = "A web app for booking the meeting rooms in a shared office."
