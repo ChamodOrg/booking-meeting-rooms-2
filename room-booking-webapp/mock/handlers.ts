@@ -107,6 +107,44 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json(page(url, busy));
   }),
 
+  // createMyBooking: same rules as the API (400 invalid / past, 404 room, 409 clash or limit)
+  http.post("/api/me/bookings", async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    const { roomId, date, startTime, endTime, attendees } = (body ?? {}) as {
+      roomId?: string; date?: string; startTime?: string; endTime?: string; attendees?: number;
+    };
+    if (
+      typeof roomId !== "string" || typeof date !== "string" || typeof startTime !== "string" ||
+      typeof endTime !== "string" || typeof attendees !== "number"
+    ) return error(400, "Bad request", "roomId, date, startTime, endTime and attendees are required.");
+    if (!DATE.test(date) || !HHMM.test(startTime) || !HHMM.test(endTime)) return error(400, "Bad request", "Invalid date or time.");
+    if (!Number.isInteger(attendees) || attendees < 1) return error(400, "Bad request", "Attendees must be a whole number of at least 1.");
+    if (!endsAfterStart(startTime, endTime)) return error(400, "Bad request", "The end time must be after the start time.");
+    if (isPast(date, startTime)) return error(400, "Bad request", "The start time has already passed. Pick a future start.");
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) return error(404, "Not found", "No such room.");
+    if (attendees > room.capacity) {
+      return error(400, "Bad request", `${room.name} holds ${room.capacity} people; ${attendees} attendees are too many.`);
+    }
+    const clash = bookings.find(
+      (b) => b.roomId === room.id && b.date === date && rangesOverlap(startTime, endTime, b.startTime, b.endTime),
+    );
+    if (clash) {
+      return error(409, "Conflict", `${room.name} is already booked from ${clash.startTime} to ${clash.endTime} on ${date}.`);
+    }
+    const upcoming = bookings.filter((b) => b.memberId === ME && isPast(b.date, b.startTime) === false).length;
+    if (upcoming >= 2) return error(409, "Conflict", "You already hold two upcoming bookings. Cancel one to book another.");
+    const created: SeedBooking = {
+      id: `b${bookings.length + 1}-${Date.now()}`,
+      roomId: room.id, memberId: ME, date, startTime, endTime, attendees,
+    };
+    bookings.push(created);
+    return HttpResponse.json(
+      { id: created.id, roomId: room.id, roomName: room.name, date, startTime, endTime, attendees, status: "upcoming" },
+      { status: 201 },
+    );
+  }),
+
   // getRoom
   http.get("/api/rooms/:roomId", ({ params }) => {
     const room = rooms.find((r) => r.id === params.roomId);

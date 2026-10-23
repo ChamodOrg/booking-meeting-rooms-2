@@ -48,8 +48,13 @@ export function RoomsPage(): ReactElement {
   const starts = useMemo(() => startSlots(date), [date]);
   // Keep the chosen start valid: never a past one.
   useEffect(() => {
-    if (!starts.includes(start)) setStart(starts.includes("11:00") ? "11:00" : (starts[0] ?? ""));
-  }, [starts, start]);
+    if (!starts.includes(start)) {
+      const next = starts.includes("11:00") ? "11:00" : (starts[0] ?? "");
+      setStart(next);
+      // Keep the default range valid: when the corrected start passes the end, end one slot later.
+      if (next && !endsAfterStart(next, end)) setEnd(SLOTS[SLOTS.indexOf(next) + 1] ?? end);
+    }
+  }, [starts, start, end]);
 
   const groupSize = Number(group);
   const groupBad = !Number.isInteger(groupSize) || groupSize < 1;
