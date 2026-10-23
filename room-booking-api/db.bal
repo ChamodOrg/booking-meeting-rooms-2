@@ -20,12 +20,11 @@ type RoomSeed record {|
 
 // The office's fixed rooms; names are unique, capacity is a whole number of people.
 final readonly & RoomSeed[] seedRooms = [
-    {id: "atlas", name: "Atlas", capacity: 4, location: "Floor 1, East wing"},
-    {id: "borealis", name: "Borealis", capacity: 6, location: "Floor 1, West wing"},
-    {id: "cedar", name: "Cedar", capacity: 8, location: "Floor 2, East wing"},
-    {id: "delta", name: "Delta", capacity: 10, location: "Floor 2, West wing"},
-    {id: "everest", name: "Everest", capacity: 14, location: "Floor 3, North wing"},
-    {id: "fjord", name: "Fjord", capacity: 20, location: "Floor 3, Boardroom"}
+    {id: "atlas", name: "Atlas", capacity: 4, location: "Floor 1, east wing"},
+    {id: "borealis", name: "Borealis", capacity: 6, location: "Floor 1, west wing"},
+    {id: "cedar", name: "Cedar", capacity: 10, location: "Floor 2, east wing"},
+    {id: "delta", name: "Delta", capacity: 2, location: "Floor 2, phone nook"},
+    {id: "everest", name: "Everest", capacity: 16, location: "Floor 3, boardroom"}
 ];
 
 function orDefault(string value, string fallback) returns string {
@@ -75,15 +74,34 @@ function createSchema(postgresql:Client db) returns error? {
         CREATE INDEX IF NOT EXISTS bookings_member_idx ON bookings (member_id)`);
 }
 
-// Idempotent: a room whose name (or id) already exists is left untouched.
+// Idempotent: the rooms table is brought in line with the seed. An id already present is
+// updated, and a room no longer in the seed is removed together with its bookings.
 function seedRoomRows(postgresql:Client db) returns error? {
     foreach RoomSeed room in seedRooms {
         sql:ParameterizedQuery insertRoom = `
             INSERT INTO rooms (id, name, capacity, location)
             VALUES (${room.id}, ${room.name}, ${room.capacity}, ${room.location})
-            ON CONFLICT DO NOTHING`;
+            ON CONFLICT (id) DO UPDATE
+            SET name = EXCLUDED.name, capacity = EXCLUDED.capacity, location = EXCLUDED.location`;
         _ = check db->execute(insertRoom);
     }
+    string[] keepIds = from RoomSeed room in seedRooms select room.id;
+    foreach string staleId in check staleRoomIds(db, keepIds) {
+        _ = check db->execute(`DELETE FROM bookings WHERE room_id = ${staleId}`);
+        _ = check db->execute(`DELETE FROM rooms WHERE id = ${staleId}`);
+    }
+}
+
+type RoomIdRow record {|
+    string id;
+|};
+
+function staleRoomIds(postgresql:Client db, string[] keepIds) returns string[]|error {
+    stream<RoomIdRow, sql:Error?> rows = db->query(`SELECT id FROM rooms`);
+    RoomIdRow[] all = check from RoomIdRow row in rows select row;
+    return from RoomIdRow row in all
+        where keepIds.indexOf(row.id) is ()
+        select row.id;
 }
 
 function initDb() returns postgresql:Client|error {

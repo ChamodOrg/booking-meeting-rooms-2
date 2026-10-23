@@ -158,7 +158,7 @@ function listMyBookings(string memberId, int 'limit, int offset) returns [Bookin
     CountRow total = check bookingDb->queryRow(`
         SELECT COUNT(*) AS total FROM bookings WHERE member_id = ${memberId}`);
     stream<BookingRow, sql:Error?> rows = bookingDb->query(`
-        SELECT * FROM (
+        SELECT id, "roomId", "roomName", "dateText", "startText", "endText", attendees, upcoming FROM (
             SELECT b.id AS id, b.room_id AS "roomId", r.name AS "roomName",
                    to_char(b.booking_date, 'YYYY-MM-DD') AS "dateText",
                    to_char(b.start_time, 'HH24:MI') AS "startText",
