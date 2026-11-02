@@ -1,4 +1,9 @@
 {
   "version": 1,
-  "artifacts": []
+  "artifacts": [
+    {
+      "path": "specs/design/decisions.md",
+      "checkedHash": "ae1a6231643d6b6ede05174703d23954d4e17648da2349aae66b97f8186239f2"
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 # Technical decisions
 
-- \[architecture\] One service owns rooms and bookings, backed by one dedicated PostgreSQL database; the web app calls it directly. *assumed* (all)
+- \[architecture\] One service owns rooms and bookings, backed by one dedicated PostgreSQL database; the web app calls it directly. (all)
 - \[data-model\] Dates and times are stored as an office-local date and wall-clock times, with no time zone. *assumed* (all)
 - \[room-booking-api\] The office's rooms are seeded when the service first starts; the API has no way to change them. *assumed* (F1)
 - \[room-booking-api\] The service judges "in the past" against its own local clock, which is the office's local time. *assumed* (F2)
