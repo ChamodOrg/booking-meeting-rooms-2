@@ -1,9 +1,9 @@
 # Technical decisions
 
 - \[architecture\] One service owns rooms and bookings, backed by one dedicated PostgreSQL database; the web app calls it directly. (all)
-- \[data-model\] Dates and times are stored as an office-local date and wall-clock times, with no time zone. *assumed* (all)
+- \[data-model\] Dates and times are stored as an office-local date and wall-clock times; the office's single fixed IANA time zone is deployment configuration, not stored per booking. *assumed* (all)
 - \[room-booking-api\] The office's rooms are seeded when the service first starts; the API has no way to change them. *assumed* (F1)
-- \[room-booking-api\] The service judges "in the past" against its own local clock, which is the office's local time. *assumed* (F2)
+- \[room-booking-api\] The service judges "in the past" against the current time converted to the office's fixed time zone, not the server's clock zone. *assumed* (F2)
 - \[room-booking-api\] Clash and limit checks and the insert run in one transaction on the room's rows, so two simultaneous bookings cannot both succeed. *assumed* (F2)
 - \[security\] Rooms are read through /rooms and a Member's bookings through /me/bookings, so another Member's booking is a 404 on cancel, never a 403. *assumed* (F1, F3)
 - \[room-booking-api\] A room's busy times list only start and end, never who booked them. *assumed* (F1)

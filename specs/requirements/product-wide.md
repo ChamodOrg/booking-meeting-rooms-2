@@ -5,7 +5,7 @@ Rules that apply to more than one feature.
 ## Requirements
 
 - P1 Every user signs in via SSO through the platform identity provider, so bookings are attributable to a real person. \[room-booking-prd.md · User Stories 1\] \[org default\] Applies to: all.
-- P2 All times are the office's local time; no time zones are handled. \[room-booking-prd.md · Product Decisions\] Applies to: F1, F2, F3.
+- P2 All times are in the office's one fixed time zone, set once for the deployment; every date and time a Member picks or sees, and what counts as "now" and "in the past", is in that zone. There is no per-Member or per-booking time zone. Applies to: F1, F2, F3.
 - P3 Search and booking apply the same room-level rules (no time overlap, attendees within capacity). \[room-booking-prd.md · Product Decisions\] Applies to: F1, F2.
 - P4 A Member may cancel only bookings they made themselves. \[room-booking-prd.md · Actors; User Stories 9\] Applies to: F3.
 

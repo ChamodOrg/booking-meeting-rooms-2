@@ -23,4 +23,5 @@ erDiagram
 ```
 
 - A booking belongs to the Member who made it (`memberId`); only that Member may cancel it. Cancelling deletes the row.
+- All dates and times are in the office's one fixed time zone (deployment configuration); a booking holds no zone of its own.
 - Two bookings of one room clash when their time ranges overlap; touching ranges do not.

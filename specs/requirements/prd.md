@@ -32,7 +32,7 @@ See [Product-wide](product-wide.md).
 - Equipment or catering requests attached to a booking.
 - Approval workflows for booking a room.
 - Multiple offices, buildings, or floors as separate bookable scopes.
-- Time zones and daylight-saving handling.
+- Per-Member or per-booking time zones; the office has one fixed time zone.
 - Editing a booking in place; a change is a cancellation and a new booking.
 - Reporting on room utilisation.
 

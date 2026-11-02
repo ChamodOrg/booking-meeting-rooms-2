@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Room Booking API
   version: 0.1.0
-  description: "Rooms, free-room search, busy times, and the signed-in Member's own bookings."
+  description: "Rooms, free-room search, busy times, and the signed-in Member's own bookings. Every date and time is in the office's one fixed time zone."
 servers:
   - url: /
 security:
