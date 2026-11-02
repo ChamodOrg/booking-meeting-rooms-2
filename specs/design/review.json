@@ -14,7 +14,8 @@
           "text": "> [data-model] Dates and times are stored as an office-local date and wall-clock times, with no time zone. (all)\n\nneed to add time zone",
           "createdAt": "2026-11-02T09:25:00.732Z",
           "status": "sent",
-          "sentAt": "2026-11-02T09:25:33.543Z"
+          "sentAt": "2026-11-02T09:25:33.543Z",
+          "question": "Which time zone is the office in (for example Asia/Colombo), and should it be one fixed office-wide zone that decides what counts as 'in the past', rather than a zone chosen per booking? The requirements currently say time zones are out of scope, so this would change them."
         }
       ]
     }
