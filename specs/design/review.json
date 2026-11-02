@@ -3,7 +3,20 @@
   "artifacts": [
     {
       "path": "specs/design/decisions.md",
-      "checkedHash": "ae1a6231643d6b6ede05174703d23954d4e17648da2349aae66b97f8186239f2"
+      "checkedHash": "ae1a6231643d6b6ede05174703d23954d4e17648da2349aae66b97f8186239f2",
+      "comments": [
+        {
+          "id": "d2644791-6a4a-489a-ab39-649c398906d0",
+          "author": {
+            "id": "01900000-0000-7000-8000-000000000030",
+            "name": "Administrator"
+          },
+          "text": "> [data-model] Dates and times are stored as an office-local date and wall-clock times, with no time zone. (all)\n\nneed to add time zone",
+          "createdAt": "2026-11-02T09:25:00.732Z",
+          "status": "sent",
+          "sentAt": "2026-11-02T09:25:33.543Z"
+        }
+      ]
     }
   ]
 }
